@@ -1,0 +1,67 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+      {
+          "Sid": "StatementTakaraInstrumentLambdaPolicy",
+          "Effect": "Allow",
+          "Action": [
+              "s3:GetObject",
+              "s3:PutObject",
+              "s3:DeleteObject",
+              "s3:ListBucket"
+          ],
+          "Resource": [
+            "arn:aws:s3:::amplify-takarainstrumentc-takarainstrumentappsbuck-b7gollhggkal",
+            "arn:aws:s3:::amplify-takarainstrumentc-takarainstrumentappsbuck-b7gollhggkal/*",
+            "arn:aws:s3:::amplify-d3jnec4a1c9ogz-ma-takarainstrumentappsbuck-ts4ixfl5fbym",
+            "arn:aws:s3:::amplify-d3jnec4a1c9ogz-ma-takarainstrumentappsbuck-ts4ixfl5fbym/*",
+            "arn:aws:s3:::amplify-smartchipamplifyw-smartchipappsbucket81750-8iz7qhdestlg",
+            "arn:aws:s3:::amplify-smartchipamplifyw-smartchipappsbucket81750-8iz7qhdestlg/*",
+            "arn:aws:s3:::amplify-d20r5izrmm0eq6-ma-smartchipappsbucket81750-lpc9vqdd05g0",
+            "arn:aws:s3:::amplify-d20r5izrmm0eq6-ma-smartchipappsbucket81750-lpc9vqdd05g0/*",
+            "arn:aws:s3:::amplify-shastaamplifywebp-shastaappsbucket30fa4b22-cwksswbgvxnr",
+            "arn:aws:s3:::amplify-shastaamplifywebp-shastaappsbucket30fa4b22-cwksswbgvxnr/*",
+            "arn:aws:s3:::amplify-d22qrm0dnasyht-ma-shastaappsbucket30fa4b22-klogqhzsctzm",
+            "arn:aws:s3:::amplify-d22qrm0dnasyht-ma-shastaappsbucket30fa4b22-klogqhzsctzm/*",
+            "arn:aws:s3:::luckybasket-takara-bedrock-rt-discovery",
+			"arn:aws:s3:::luckybasket-takara-bedrock-rt-discovery/*"
+        ]
+      },
+      {
+          "Sid": "StatementTakaraDynamoDBTableLambdaPolicy",
+          "Effect": "Allow",
+          "Action": [
+              "dynamodb:BatchGet*",
+              "dynamodb:DescribeStream",
+              "dynamodb:DescribeTable",
+              "dynamodb:Get*",
+              "dynamodb:Query",
+              "dynamodb:Scan",
+              "dynamodb:BatchWrite*",
+              "dynamodb:CreateTable",
+              "dynamodb:Delete*",
+              "dynamodb:Update*",
+              "dynamodb:PutItem"
+          ],
+          "Resource": "arn:aws:dynamodb:us-west-1:039612858415:table/*"
+      },
+      {
+          "Sid": "StatementTakaraLambdaLambdaPolicy",
+          "Effect": "Allow",
+          "Action": "lambda:InvokeFunction",
+          "Resource": "arn:aws:lambda:us-west-1:039612858415:function:*"
+      },
+      {
+        "Sid": "StatementTakaraBedrockLambdaPolicy",
+        "Effect": "Allow",
+        "Action": [
+            "bedrock:InvokeModel",
+            "bedrock:InvokeModelWithResponseStream",
+            "bedrock:Retrieve",
+            "bedrock:RetrieveAndGenerate",
+            "bedrock:GetInferenceProfile"
+        ],
+        "Resource": "*" 
+      }
+  ]
+}
