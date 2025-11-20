@@ -21,5 +21,5 @@ aws lambda create-function --function-name rt_discovery_agent_bedrock_lambda --p
   --profile takara-instrument-admin \
   --architectures arm64 \
   --memory-size 2048 \
-  --timeout 60
+  --timeout 120
 

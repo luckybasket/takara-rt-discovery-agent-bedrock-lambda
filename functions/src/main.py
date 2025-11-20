@@ -74,6 +74,16 @@ def processAction(actionID, payload):
       output['isSuccess'] = True
     case ActionID.AGENT_KB.value:
       bedrock = importlib.import_module("localpackage.takara_bedrock_agent_service")
+      bucket = payload['amplify_s3_bucket']
+      bedrockRegion = payload['bedrock_region']
+      tmpTable = payload['dynamodb_rt_discovery_bedrock_agent_tmp_table']
+      tables ={
+        'tmp': tmpTable
+      }
+      statusIDKey = payload['status_id_key']
+      userIdentityID = payload['user_identity_id']
+      tmpFolderMain = payload['tmp_folder_main']
+      s3Path = 'users/'+userIdentityID+'/'+tmpFolderMain+'/rt_discovery_agent/tmp/'
       agentId = payload['agent_id']
       aliasId = payload['alias_id']
       sessionId = payload['session_id']
@@ -82,23 +92,34 @@ def processAction(actionID, payload):
           sessionId = None
       else:
         sessionId = None
-      tbrs = bedrock.TakaraBedrockAgentService(agentId, aliasId, sessionId, logger)
+      agentParams = {}
+      agentParams['s3Path'] = s3Path
+      agentParams['statusIDKey'] = statusIDKey
+      agentParams['userIdentityID'] = userIdentityID
+      agentParams['agentId'] = agentId
+      agentParams['aliasId'] = aliasId
+      agentParams['sessionId'] = sessionId
+      agentParams['bedrockRegion'] = bedrockRegion
+      tbrs = bedrock.TakaraBedrockAgentService(bucket, tables, logger, agentParams)
       queryText = payload['query_text']
       tbrs.query(queryText)
-      if tbrs.isSuccess:
+      if tbrs.aiResults['isSuccess']:
         output['isSuccess'] = True
-        output['responseContent'] = tbrs.responseContent
-        output['responseCitationsList'] = tbrs.responseCitationsList
-        output['sessionId'] = tbrs.sessionId
+        output['responseContent'] = tbrs.aiResults['responseContent']
+        output['responseCitationsList'] = tbrs.aiResults['responseCitationsList']
+        output['imgFileS3Path'] = tbrs.aiResults['imgFileS3Path']
+        output['isCitationsFound'] = tbrs.aiResults['isCitationsFound']
+        output['isFilesFound'] = tbrs.aiResults['isFilesFound']
+        output['sessionId'] = tbrs.aiResults['sessionId']
       else:
         output['isSuccess'] = False
-        output['errorMsg'] = tbrs.responseContent
+        output['errorMsg'] = tbrs.aiResults['responseContent']
     case ActionID.CITATION.value:
       takaraS3 = importlib.import_module("localpackage.takara_s3_service")
+      region = payload['bedrock_region']
       bucketName = payload['bucket_name']
       citationKey = payload['citation_key']
       folderPath = payload['folder_path']
-      region = 'us-east-2'
       s3Service = takaraS3.TakaraS3Service(region)
       expirationTime = 3600
       presignedURL = s3Service.get_presigned_url(bucketName, folderPath, citationKey, expirationTime)
