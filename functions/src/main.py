@@ -100,7 +100,7 @@ def processAction(actionID, payload):
       agentParams['aliasId'] = aliasId
       agentParams['sessionId'] = sessionId
       agentParams['bedrockRegion'] = bedrockRegion
-      tbrs = bedrock.TakaraBedrockAgentService(bucket, tables, logger, agentParams)
+      tbrs = bedrock.TakaraBedrockAgentService(bucket, tables, logger, actionID, agentParams)
       queryText = payload['query_text']
       tbrs.query(queryText)
       if tbrs.aiResults['isSuccess']:
@@ -115,14 +115,28 @@ def processAction(actionID, payload):
         output['isSuccess'] = False
         output['errorMsg'] = tbrs.aiResults['responseContent']
     case ActionID.CITATION.value:
-      takaraS3 = importlib.import_module("localpackage.takara_s3_service")
-      region = payload['bedrock_region']
+      bedrock = importlib.import_module("localpackage.takara_bedrock_agent_service")
+      bucket = payload['amplify_s3_bucket']
+      bedrockRegion = payload['bedrock_region']
+      tmpTable = payload['dynamodb_rt_discovery_bedrock_agent_tmp_table']
+      tables ={
+        'tmp': tmpTable
+      }
+      statusIDKey = payload['status_id_key']
+      userIdentityID = payload['user_identity_id']
+      tmpFolderMain = payload['tmp_folder_main']
+      s3Path = 'users/'+userIdentityID+'/'+tmpFolderMain+'/rt_discovery_agent/tmp/'
       bucketName = payload['bucket_name']
       citationKey = payload['citation_key']
       folderPath = payload['folder_path']
-      s3Service = takaraS3.TakaraS3Service(region)
-      expirationTime = 3600
-      presignedURL = s3Service.get_presigned_url(bucketName, folderPath, citationKey, expirationTime)
+      agentParams = {}
+      agentParams['s3Path'] = s3Path
+      agentParams['statusIDKey'] = statusIDKey
+      agentParams['userIdentityID'] = userIdentityID
+      agentParams['bedrockRegion'] = bedrockRegion
+      tbrs = bedrock.TakaraBedrockAgentService(bucket, tables, logger, actionID, agentParams)
+      tbrs.getCitation(bucketName, folderPath, citationKey)
+      presignedURL = tbrs.aiResults['presignedURL']
       if presignedURL is not None:
         output['isSuccess'] = True
         output['presignedURL'] = presignedURL

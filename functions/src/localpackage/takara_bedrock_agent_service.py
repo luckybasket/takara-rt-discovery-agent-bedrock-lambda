@@ -2,24 +2,35 @@ import boto3
 import uuid
 import importlib
 import io
+import json
+from enum import Enum
+class ActionID(Enum):
+  NONE = 0
+  AGENT_KB = 1
+  CITATION = 2
 
 
 class TakaraBedrockAgentService:
   """Contains methods for managing the takara aws Bedrock agent api.
   """
 
-  def __init__(self, bucket, tables, logger, agentParams):
-    self.bedrockClient = boto3.client(service_name='bedrock-agent-runtime', region_name=agentParams['bedrockRegion'])
-    self.tams = importlib.import_module("localpackage.takara_amplify_service")
+  def __init__(self, bucket, tables, logger, actionID, agentParams):
+    match (actionID):
+      case ActionID.AGENT_KB.value:
+        self.bedrockClient = boto3.client(service_name='bedrock-agent-runtime', region_name=agentParams['bedrockRegion'])
+        self.payloadCount = 1
+        self.agentId = agentParams['agentId']
+        self.aliasId = agentParams['aliasId']
+        self.s3Path = agentParams['s3Path']
+        self.sessionId = agentParams['sessionId']
+      case ActionID.CITATION.value:
+        self.s3Service = importlib.import_module("localpackage.takara_s3_service")
+        self.payloadCount = 1       
+    self.tams = importlib.import_module("localpackage.takara_amplify_service") 
     self.takaraAmplify = self.tams.TakaraAmplifyService()
     self.authCode = r')j9ju\=+ui"WuQ]=7G8s'
     self.bucketID = bucket
     self.tmpTableID = tables['tmp']
-    self.payloadCount = 1
-    self.agentId = agentParams['agentId']
-    self.aliasId = agentParams['aliasId']
-    self.s3Path = agentParams['s3Path']
-    self.sessionId = agentParams['sessionId']
     self.logger = logger
     self.statusIDKey = agentParams['statusIDKey']
     self.userIdentityID = agentParams['userIdentityID']
@@ -79,8 +90,6 @@ class TakaraBedrockAgentService:
     return
   
 
-
-
   def invoke_agent(self, prompt):
     response = self.bedrockClient.invoke_agent(
       agentId=self.agentId,
@@ -128,11 +137,6 @@ class TakaraBedrockAgentService:
             imgdata = io.BytesIO(bytes_data)
             imgFileS3Path = self.s3Path + name
             self.takaraAmplify.upload_io_image(self.bucketID, imgdata, imgFileS3Path, 'image/png')
-            self.statusData['payload'][0] = imgFileS3Path
-            self.statusData['status_id'] = 1
-            self.statusData['progress_id'] = 1
-            self.statusData['progress_max'] = 1
-            self.update_status()
             isFilesFound = True
     responseContent = completion
     self.aiResults.update({'responseContent': responseContent, 'responseCitationsList': responseCitationsList, 
@@ -146,8 +150,28 @@ class TakaraBedrockAgentService:
         self.sessionId = str(uuid.uuid4())
       self.invoke_agent(queryText)
       self.aiResults.update({'isSuccess': True})
-      return
     except Exception as e:
       responseContent = f"Error querying Bedrock: {e}"
       self.aiResults.update({'isSuccess': False, 'responseContent': responseContent})
-      return
+    self.statusData['payload'][0] = json.dumps(self.aiResults)
+    self.statusData['status_id'] = 1
+    self.statusData['progress_id'] = 1
+    self.statusData['progress_max'] = 1
+    self.update_status()
+    return
+
+  def getCitation(self, bucketName, folderPath, citationKey):
+    self.reset_status()
+    expirationTime = 3600
+    try:
+      presignedURL = self.s3Service.get_presigned_url(bucketName, folderPath, citationKey, expirationTime)
+      self.aiResults.update({'isSuccess': True, 'presignedURL': presignedURL})
+    except Exception as e:
+      responseContent = f"Error getting citation: {e}"
+      self.aiResults.update({'isSuccess': False, 'presignedURL': None, 'errorMsg': responseContent})
+    self.statusData['payload'][0] = json.dumps(self.aiResults)
+    self.statusData['status_id'] = 1
+    self.statusData['progress_id'] = 1
+    self.statusData['progress_max'] = 1
+    self.update_status()
+    return
