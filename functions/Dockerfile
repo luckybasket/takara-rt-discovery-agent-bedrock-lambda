@@ -1,4 +1,4 @@
-FROM public.ecr.aws/lambda/python:3.13
+FROM public.ecr.aws/lambda/python:3.14
 
 # Copy requirements.txt
 COPY requirements.txt ${LAMBDA_TASK_ROOT}
@@ -10,4 +10,4 @@ RUN pip install -r requirements.txt
 COPY src ${LAMBDA_TASK_ROOT}
 
 # Set the CMD to your handler (could also be done as a parameter override outside of the Dockerfile)
-CMD [ "main.handler" ]
+CMD [ "main.lambda_handler" ]

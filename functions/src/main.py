@@ -15,7 +15,7 @@ logger.setLevel(logging.INFO)
 LAMBDA_AUTH_CODE = os.environ['LAMBDA_AUTH_CODE']
 
 
-def handler(event, context):
+def lambda_handler(event, context):
   # Extract headers from the event object
   if 'httpMethod' in event:
     if event['httpMethod'] == 'OPTIONS':
